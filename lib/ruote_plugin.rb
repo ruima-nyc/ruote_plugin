@@ -29,6 +29,12 @@ require 'openwfe/extras/engine/db_persisted_engine'
 require 'openwfe/extras/expool/db_errorjournal'
 require 'openwfe/extras/expool/db_history'
 
+require 'drb/drb'
+
+SERVER_URI="druby://localhost:8888"
+DRb.start_service
+
+
 
 module RuotePlugin
 
@@ -42,17 +48,24 @@ module RuotePlugin
 
     engine_class = application_context.delete(:engine_class)
 
-    @engine = engine_class.new(application_context)
+#    @engine = engine_class.new(application_context)
+
+
+
+
+    rs=DRbObject.new_with_uri(SERVER_URI)
+    @engine = rs.get_engine()
+
 
     #
     # init history
 
-    @engine.init_service(:s_history, OpenWFE::Extras::QueuedDbHistory)
+    #@engine.init_service(:s_history, OpenWFE::Extras::QueuedDbHistory)
 
     #
     # override error_journal with the db flavour
 
-    @engine.init_service(:s_error_journal, OpenWFE::Extras::DbErrorJournal)
+    #@engine.init_service(:s_error_journal, OpenWFE::Extras::DbErrorJournal)
 
     #
     # let engine reload expressions from its expool
@@ -61,7 +74,7 @@ module RuotePlugin
     # (this should normally be done by the app itself, once all the participants
     # have been registered)
 
-    @engine.reload
+    #@engine.reload
 
     puts '.. Ruote workflow/BPM engine started (ruote_plugin)'
   end
@@ -110,16 +123,16 @@ class LinkGenerator < OpenWFE::PlainLinkGenerator
 
   protected
 
-    def link (rel, res, id=nil)
+  def link (rel, res, id=nil)
 
-      href, rel = super
+    href, rel = super
 
-      if @request
-        [ "#{@request.protocol}#{@request.host}:#{@request.port}#{href}", rel ]
-      else
-        [ href, rel ]
-      end
+    if @request
+      [ "#{@request.protocol}#{@request.host}:#{@request.port}#{href}", rel ]
+    else
+      [ href, rel ]
     end
+  end
 end
 
 
